@@ -45,12 +45,8 @@ class commentItem(scrapy.Item):
 	#polarity = scrapy.Field() # 不知道这是什么
 	#polarity_strength = scrapy.Field() # 不知道这是什么
 
-class fansItem(scrapy.Item):
+class idItem(scrapy.Item):
+    """
+    a class for storing the seeds of crawling
+    """
     id = scrapy.Field() # 用户id
-    fansIds = scrapy.Field() # 粉丝的id
-    href = scrapy.Field() # 链接地址
-
-class followsItem(scrapy.Item):
-    id = scrapy.Field() # 用户id
-    followsIds = scrapy.Field() # 用户关注的人的id
-    href = scrapy.Field() # 链接地址

@@ -5,45 +5,31 @@ import datetime
 from scrapy.spider import CrawlSpider
 from scrapy.selector import Selector
 from scrapy.http import Request
-from weibo.items import userItem, weiboItem, fansItem, followsItem, commentItem
-from weibo.util import process_ctime
+
+from weibo.items import userItem, weiboItem, commentItem, idItem
+from weibo.util import process_ctime, getSeed
 
 class Spider(CrawlSpider):
 	name = "weibo"
 	host = "http://weibo.cn"
-	start_urls = [
-		5780802073, 2159807003,
-		1756807885, 3378940452, 5762793904, 
-		1239246050,1197191492,1191258123,
-		3637185102, 1934363217, 5336500817, 1431308884,5579672076,3105589817, 5882481217, 5831264835,2501511785,
-		2717354573,  5818747476, 5579672076, 1885080105,5778836010, 5722737202,1239246050,5073111647, 5398825573, 
-	]
-	scrawlid = set(start_urls)  # 记录待爬的微博ID
+
+	scrawlid = set(getSeed()) # 记录待爬的微博ID
 	finishid = set()  # 记录已爬的微博ID
 
 	def start_requests(self):
 		while True:
 			ID = self.scrawlid.pop()
+			ID = int(str(ID).split('\'')[1])
 			self.finishid.add(ID)  # 加入已爬队列
-			ID = str(ID)
-			follows = []
-			followsItems = followsItem()
-			followsItems["id"] = ID
-			followsItems["followsIds"] = follows
-			fans = []
-			fansItems = fansItem()
-			fansItems["id"] = ID
-			fansItems["fansIds"] = fans
 
-			url_information0 = "http://weibo.cn/attgroup/opening?uid=%s" % ID
-			url_weibo = "http://weibo.cn/%s/profile?filter=1&page=1" % ID
+			url_information0 = "http://weibo.cn/%s/profile?filter=1&page=1" % ID
+			url_weibo = "http://weibo.cn/%s/profile?filter=0&page=1" % ID
 			url_follows = "http://weibo.cn/%s/follow" % ID
 			url_fans = "http://weibo.cn/%s/fans" % ID
 			yield Request(url=url_information0, meta={"ID": ID}, callback=self.parse0)  # 去爬个人信息
 			yield Request(url=url_weibo, meta={"ID": ID}, callback=self.parse2)  # 去爬微博
-			yield Request(url=url_follows, meta={"item": followsItems, "result": follows},
-						  callback=self.parse4)  # 去爬关注人
-			yield Request(url=url_fans, meta={"item": fansItems, "result": fans}, callback=self.parse4)  # 去爬粉丝
+			yield Request(url=url_follows, callback=self.parse4)  # 去爬关注人
+			yield Request(url=url_fans, callback=self.parse4)  # 去爬粉丝
 
 	def parse0(self, response):
 		""" 抓取个人信息0 """
@@ -60,9 +46,9 @@ class Spider(CrawlSpider):
 				userItems["followsCount"] = int(followsCount[0])
 			if fansCount:
 				userItems["fansCount"] = int(fansCount[0])
-			userItems["id"] = response.meta["ID"]
-			url_information1 = "http://weibo.cn/%s/info" % response.meta["ID"]
-			yield Request(url=url_information1, meta={"item": userItems}, callback=self.parse1)
+		userItems["id"] = response.meta["ID"]
+		url_information1 = "http://weibo.cn/%s/info" % response.meta["ID"]
+		yield Request(url=url_information1, meta={"item": userItems}, callback=self.parse1)
 
 	def parse1(self, response):
 		""" 抓取个人信息1 """
@@ -119,7 +105,7 @@ class Spider(CrawlSpider):
 	def parse2(self, response):
 		""" 抓取微博数据 """
 
-		print "start crawl weibo"
+		# print "start crawl weibo"
 
 		selector = Selector(response)
 		weibo = selector.xpath('body/div[@class="c" and @id]')
@@ -127,6 +113,7 @@ class Spider(CrawlSpider):
 			weiboitem = weiboItem()
 			weiboId = one.xpath('@id').extract_first().replace("M_","")  # 微博ID
 			weiboText = "".join(one.xpath('div/span[@class="ctt"]/text()').extract())  # 微博内容
+			zfreason = "".join(one.xpath('div[2]/text()').extract())  # 转发微博的原因
 			zfcount = "".join(re.findall(u'\u8f6c\u53d1\[(\d+)\]', one.extract()))  # 转发数
 			commentCount = "".join(re.findall(u'\u8bc4\u8bba\[(\d+)\]', one.extract()))  # 评论数
 			commentLink = "".join(one.xpath('div/a[@class = "cc"]/@href').extract()) #评论链接
@@ -134,20 +121,19 @@ class Spider(CrawlSpider):
 
 			weiboitem["uID"] = response.meta["ID"]
 			weiboitem["id"] = weiboId
-			if weiboText:
-				weiboitem["weiboText"] = weiboText.strip(u"[\u4f4d\u7f6e]")  # 去掉最后的"[位置]"
+
+			# (转发的)微博内容，去掉最后的"[位置]"和空格符
+			weiboitem["weiboText"] = weiboText.strip(u"[\u4f4d\u7f6e]").replace(u'\xa0','')+zfreason.replace(u'\xa0','')  
+
 			weiboitem["zfcount"] = int(zfcount)
 			weiboitem["commentCount"] = int(commentCount)
 			weiboitem["commentLink"] = commentLink
 			weiboitem["dzcount"] = int(dzcount)
 
-			yield weiboitem
+			yield weiboitem #存在问题
 			yield Request(url=commentLink, meta={'weiboId':weiboId}, callback=self.parse3)
-		
 
-
-		url_next = selector.xpath(
-			u'body/div[@class="pa" and @id="pagelist"]/form/div/a[text()="\u4e0b\u9875"]/@href').extract()
+		url_next = selector.xpath(u'body/div[@class="pa" and @id="pagelist"]/form/div/a[text()="\u4e0b\u9875"]/@href').extract()
 
 		if url_next:
 			yield Request(url=self.host + url_next[0], meta={"ID": response.meta["ID"]}, callback=self.parse2)
@@ -155,7 +141,7 @@ class Spider(CrawlSpider):
 	def parse3(self, response):
 		""" 抓取某条微博评论数据 """
 
-		print "start crawl comment"
+		# print "start crawl comment"
 
 		selector = Selector(response)
 		comment = selector.xpath('body/div[@class="c" and @id]')
@@ -174,8 +160,8 @@ class Spider(CrawlSpider):
 			citem['createdAt'] = process_ctime(cTime)
 			citem['id'] = cId
 
-			if ctext:   # 去掉评论中的 "回复:" 一词
-				citem['text'] = "".join(ctext).replace(u"\u56de\u590d:","")
+			# 去掉评论中的 "回复:" 一词
+			citem['text'] = "".join(ctext).replace(u"\u56de\u590d:","")
 			citem['name'] = cname
 
 			yield citem
@@ -188,21 +174,20 @@ class Spider(CrawlSpider):
 
 	def parse4(self, response):
 		""" 抓取关注或粉丝 """
-		items = response.meta["item"]
 		selector = Selector(response)
-		text2 = selector.xpath(
-			u'body//table/tr/td/a[text()="\u5173\u6ce8\u4ed6" or text()="\u5173\u6ce8\u5979"]/@href').extract()
+		text2 = selector.xpath(u'body//table/tr/td/a[text()="\u5173\u6ce8\u4ed6" or text()="\u5173\u6ce8\u5979"]/@href').extract()
 		for elem in text2:
+			iditem = idItem()
 			elem = re.findall('uid=(\d+)', elem)
 			if elem:
-				response.meta["result"].append(elem[0])
-				ID = int(elem[0])
-				if ID not in self.finishid:  # 新的ID，如果未爬则加入待爬队列
+				ID = str(elem[0])
+				iditem["id"] = ID
+				if ID not in self.finishid:
 					self.scrawlid.add(ID)
+				yield iditem
 
 		url_next = selector.xpath(
 			u'body//div[@class="pa" and @id="pagelist"]/form/div/a[text()="\u4e0b\u9875"]/@href').extract()
 
 		if url_next:
-			yield Request(url=self.host + url_next[0], meta={"item": items, "result": response.meta["result"]},
-						  callback=self.parse4)
+			yield Request(url=self.host + url_next[0], callback=self.parse4)

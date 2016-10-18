@@ -1,6 +1,8 @@
 # -*- encoding=utf-8 -*-
 
 import datetime
+from sqlalchemy.orm import sessionmaker
+from weibo.models import db_connect, Sina_id
 
 def process_ctime(ct):
 	# 处理评论的创建时间
@@ -26,3 +28,11 @@ def process_ctime(ct):
 			return str(datetime.datetime.now().year)+'-'+monC+'-'+day+' '+temp.split(' ')[1]+":00"
 		else:
 			return temp
+
+def getSeed():
+	# return a list of seed sina_id
+	engine = db_connect()
+	Session = sessionmaker(bind=engine)
+	session = Session()
+	seed = session.query(Sina_id.id).filter()
+	return seed

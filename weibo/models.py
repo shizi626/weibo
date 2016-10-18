@@ -12,16 +12,16 @@ from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime
 from weibo.settings import DATABASE
 
 def db_connect():
-    """
-    Performs database connection using database settings from settings.py.
-    Returns sqlalchemy engine instance
-    """
-    return create_engine(URL(**DATABASE))
+	"""
+	Performs database connection using database settings from settings.py.
+	Returns sqlalchemy engine instance
+	"""
+	return create_engine(URL(**DATABASE))
 
 
 def create_table(engine):
-    """"""
-    Base.metadata.create_all(engine)
+	""""""
+	Base.metadata.create_all(engine)
 
 Base = declarative_base()
 
@@ -61,3 +61,12 @@ class Sina_comments(Base):
 	createdAt = Column(DateTime, default = "")
 	text = Column(Text, default = "")
 	name = Column(String(50), default = "")
+
+class Sina_id(Base):
+	"""
+	a class for storing the seeds of crawling
+	"""
+	
+	__tablename__ = "sina_id"
+
+	id = Column(String(20), primary_key = True) #用户ID

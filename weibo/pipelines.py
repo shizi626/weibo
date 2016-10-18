@@ -5,11 +5,16 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
 
+import csv
 from contextlib import contextmanager
 from sqlalchemy.orm import sessionmaker
-from weibo.items import userItem,weiboItem,commentItem
-from weibo.models import db_connect,create_table,Sina_users,Sina_weibos,Sina_comments
+
+from weibo.items import userItem,weiboItem,commentItem,idItem
+from weibo.models import db_connect,create_table,\
+								Sina_users,Sina_weibos,Sina_comments,Sina_id
+
 from scrapy.exceptions import DropItem
+from scrapy import signals
 
 @contextmanager
 def session_scope(Session):
@@ -48,6 +53,19 @@ class WeiboPipeline(object):
 		create_table(engine)
 		self.Session = sessionmaker(bind=engine)
 
+	@classmethod
+	def from_crawler(cls, crawler):
+		pipeline = cls()
+		crawler.signals.connect(pipeline.spider_opened, signals.spider_opened)
+		crawler.signals.connect(pipeline.spider_closed, signals.spider_closed)
+		return pipeline
+
+	def spider_opened(self, spider):
+		pass
+
+	def spider_closed(self, spider):
+		pass
+		
 	def process_item(self, item, spider):
 		if isinstance(item, userItem):
 			u = Sina_users(
@@ -89,3 +107,7 @@ class WeiboPipeline(object):
 				)
 			with session_scope(self.Session) as session:
 				session.add(w)
+		elif isinstance(item, idItem):
+			i = Sina_id(id = item['id'])
+			with session_scope(self.Session) as session:
+				session.add(i)

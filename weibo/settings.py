@@ -92,7 +92,6 @@ DATABASE = {'drivername': 'mysql',
             'host': 'localhost',
             'port': '3306',
             'username': 'root',
-            'password': 'nicai@690!?',
             'database': 'sina',
             'query': {'charset': 'utf8'}}
 

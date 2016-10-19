@@ -6,7 +6,6 @@ import requests
 
 myWeiBo = [
     # 需要新的微博账号
-    {'no': '18933993096', 'psw': 'holdonto32'},
 ]
 
 

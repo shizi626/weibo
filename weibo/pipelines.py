@@ -72,7 +72,7 @@ class WeiboPipeline(object):
 				id = item['id'],
 				name = item['name'].encode("utf-8"),
 				province = item['province'].encode("utf-8"),
-				city = item['city'].encode("utf-8"),
+				# city = item['city'].encode("utf-8"),
 				collectTime = item['collectTime'],
 				gender = item['gender'],
 				verified = item['verified'],

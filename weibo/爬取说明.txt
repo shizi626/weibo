@@ -1,0 +1,3 @@
+参照 http://news.h5.com.cn/python/5503.html 完成Tor，Vidalia，polipo的安装。
+依次启动 Vidalia，在cmd 输入 polipo.exe -c config.sample 启动polipo， 
+最后在cmd输入scrapy crawl weibo 和scrapy crawl info，分别启动两个爬虫

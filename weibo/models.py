@@ -31,7 +31,7 @@ class Sina_users(Base):
 	id = Column(String(20),primary_key = True)
 	name = Column(String(50), default = "")
 	province = Column(String(20), default = "")
-	city = Column(String(20), default = "")
+	# city = Column(String(20), default = "")
 	collectTime = Column(DateTime, default = "")
 	gender = Column(String(2))
 	verified = Column(Integer)

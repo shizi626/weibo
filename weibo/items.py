@@ -14,8 +14,7 @@ class userItem(scrapy.Item):
     id = scrapy.Field(default='null') # 用户id
     name = scrapy.Field(default='null') # 用户昵称
     province = scrapy.Field(default='null')	# 省份
-    city = scrapy.Field(default='null')	# 城市
-    # regTime = scrapy.Field() # 注册时间，暂时不知道怎么爬
+    # city = scrapy.Field(default='null')	# 城市
     collectTime = scrapy.Field(default='null') # 收录时间，即爬取的时间
     gender = scrapy.Field(default='null') # 性别 m f
     verified = scrapy.Field(default='null') # 是否认证 0-认证 1-没有

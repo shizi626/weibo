@@ -7,7 +7,7 @@ from scrapy.selector import Selector
 from scrapy.http import Request
 
 from weibo.items import userItem, weiboItem, commentItem, idItem
-from weibo.util import process_ctime, getSeed
+from weibo.util import process_ctime, getSeed, process_emoji
 
 class Spider(CrawlSpider):
 	name = "weibo"
@@ -22,11 +22,11 @@ class Spider(CrawlSpider):
 			ID = int(str(ID).split('\'')[1])
 			self.finishid.add(ID)  # 加入已爬队列
 
-			url_information0 = "http://weibo.cn/%s/profile?filter=1&page=1" % ID
+			url_information0 = "http://weibo.cn/u/%s" % ID
 			url_weibo = "http://weibo.cn/%s/profile?filter=0&page=1" % ID
 			url_follows = "http://weibo.cn/%s/follow" % ID
 			url_fans = "http://weibo.cn/%s/fans" % ID
-			yield Request(url=url_information0, meta={"ID": ID}, callback=self.parse0)  # 去爬个人信息
+			#yield Request(url=url_information0, meta={"ID": ID}, callback=self.parse0)  # 去爬个人信息
 			yield Request(url=url_weibo, meta={"ID": ID}, callback=self.parse2)  # 去爬微博
 			yield Request(url=url_follows, callback=self.parse4)  # 去爬关注人
 			yield Request(url=url_fans, callback=self.parse4)  # 去爬粉丝
@@ -34,6 +34,7 @@ class Spider(CrawlSpider):
 	def parse0(self, response):
 		""" 抓取个人信息0 """
 		userItems = userItem()
+		userItems["id"] = response.meta["ID"] # 用户ID
 		selector = Selector(response)
 		text0 = selector.xpath('body/div[@class="u"]/div[@class="tip2"]').extract_first()
 		if text0:
@@ -46,57 +47,55 @@ class Spider(CrawlSpider):
 				userItems["followsCount"] = int(followsCount[0])
 			if fansCount:
 				userItems["fansCount"] = int(fansCount[0])
+
 		userItems["id"] = response.meta["ID"]
 		url_information1 = "http://weibo.cn/%s/info" % response.meta["ID"]
 		yield Request(url=url_information1, meta={"item": userItems}, callback=self.parse1)
 
 	def parse1(self, response):
 		""" 抓取个人信息1 """
-		userItem = response.meta["item"]
+		userItems = response.meta["item"]
 		selector = Selector(response)
 		text1 = ";".join(selector.xpath('body/div[@class="c"]/text()').extract())  # 获取标签里的所有text()
 		nickname = "".join(re.findall(u'\u6635\u79f0[:|\uff1a](.*?);', text1))  # 昵称
 		place = re.findall(u'\u5730\u533a[:|\uff1a](.*?);', text1)  # 地区（包括省份和城市）
 		gender = re.findall(u'\u6027\u522b[:|\uff1a](.*?);', text1)  # 性别
 		verified = re.findall(u'\u8ba4\u8bc1[:|\uff1a](.*?);', text1) # 认证情况
-		url = "".join(re.findall(u'\u4e92\u8054\u7f51[:|\uff1a](.*?);', text1))  # 首页链接，即外部链接
 		discription = "".join(re.findall(u'\u7b80\u4ecb[:|\uff1a](.*?);', text1))  # 用户描述
+		
+		url = response.url  # 首页链接，即外部链接
 		image = u"\u5934\u50cf"
 		profileImageUrl = "".join(response.xpath('//img[@alt = "%s"]/@src'%(image)).extract())
 
-		userItem["name"] = nickname
-
+		
+		userItems["name"] = nickname
 		if place:
-			place = place[0].split(" ")
-			userItem["province"] = place[0]
-			if len(place) > 1:
-				userItem["city"] = place[1]
-			else:
-				userItem["city"] = ''
+			userItems["province"] = place[0]
 		else:
-			userItem["province"] = ''
-			userItem["city"] = ''
+			userItems["province"] = ''
 
-		userItem['collectTime'] = datetime.datetime.now()
+		userItems['collectTime'] = datetime.datetime.now()
 
 		if gender:
 			if gender[0] == u"\u7537":
-				userItem["gender"] = 'm'
+				userItems["gender"] = 'm'
 			else:
-				userItem["gender"] = 'f'
+				userItems["gender"] = 'f'
+		else:
+			userItems["gender"] = ''
 
 		if verified:
-			userItem['verified'] = 0
+			userItems['verified'] = 0
 		else:
-			userItem['verified'] = 1
+			userItems['verified'] = 1
 
-		userItem["bokeUrl"] = url
+		userItems["bokeUrl"] = url
 
-		userItem['discription'] = discription
+		userItems['discription'] = process_emoji(discription)
 
-		userItem['profileImageUrl'] = profileImageUrl
+		userItems['profileImageUrl'] = profileImageUrl
 
-		yield userItem
+		yield userItems
 
 
 	# 抓取思路：
@@ -123,7 +122,8 @@ class Spider(CrawlSpider):
 			weiboitem["id"] = weiboId
 
 			# (转发的)微博内容，去掉最后的"[位置]"和空格符
-			weiboitem["weiboText"] = weiboText.strip(u"[\u4f4d\u7f6e]").replace(u'\xa0','')+zfreason.replace(u'\xa0','')  
+			tempweibo = weiboText.strip(u"[\u4f4d\u7f6e]").replace(u'\xa0','')+zfreason.replace(u'\xa0','')  
+			weiboitem["weiboText"] = process_emoji(tempweibo)
 
 			weiboitem["zfcount"] = int(zfcount)
 			weiboitem["commentCount"] = int(commentCount)
@@ -151,7 +151,8 @@ class Spider(CrawlSpider):
 			citem = commentItem()
 			cTime = one.xpath('span[@class="ct"]/text()')
 			cId = "".join(re.findall('id="C_(\d+)', one.extract())) #评论的id
-			ctext = one.xpath('span[@class="ctt"]/text()').extract() # 评论内容
+			ctext = "".join(one.xpath('span[@class="ctt"]/text()').extract()) # 评论内容
+			cAt = " ".join(one.xpath('span[@class="ctt"]/a/text()').extract()) # 评论中@其他用户的内容
 			cname = "".join(one.xpath('a[1]/text()').extract()) #评论者昵称
 
 			if weiboId:
@@ -161,7 +162,7 @@ class Spider(CrawlSpider):
 			citem['id'] = cId
 
 			# 去掉评论中的 "回复:" 一词
-			citem['text'] = "".join(ctext).replace(u"\u56de\u590d:","")
+			citem['text'] = process_emoji(ctext.replace(u"\u56de\u590d:","")+cAt)
 			citem['name'] = cname
 
 			yield citem

@@ -1,5 +1,6 @@
 # -*- encoding=utf-8 -*-
 
+import re
 import datetime
 from sqlalchemy.orm import sessionmaker
 from weibo.models import db_connect, Sina_id
@@ -36,3 +37,10 @@ def getSeed():
 	session = Session()
 	seed = session.query(Sina_id.id).filter()
 	return seed
+
+def process_emoji(emoji):
+	# 去掉emoji表情
+	# 如果是UCS-4编码则可以使用
+	# highpoints = re.compile(u'[\U00010000-\U0001ffff]')
+	highpoints = re.compile(u'[\uD800-\uDBFF][\uDC00-\uDFFF]')
+	return highpoints.sub(u'', emoji)

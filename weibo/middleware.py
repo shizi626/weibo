@@ -2,7 +2,6 @@
 import random
 from cookies import cookies
 from user_agents import agents
-from ipproxy import proxies
 from weibo import settings
 
 

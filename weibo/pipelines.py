@@ -29,23 +29,6 @@ def session_scope(Session):
 	finally:
 		session.close()
 
-# 待修改，要去重！
-class DuplicatesPipeline(object):
-
-	def __init__(self):
-		engine = db_connect()
-		create_table(engine)
-		self.Session = sessionmaker(bind=engine)
-		self.session = self.Session()
-
-	def process_item(self, item, spider):
-		if self.session.query(Sina_users.id).filter(Sina_users.id == item['id']) or \
-			self.session.query(Sina_weibos.id).filter(Sina_weibos.id == item['id']) or \
-			self.session.query(Sina_comments.id).filter(Sina_comments.id == item['id']):
-			raise DropItem("Duplicate item found: %s" % item)
-		else:
-			return item
-
 class WeiboPipeline(object):
 
 	def __init__(self):

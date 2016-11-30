@@ -1,0 +1,19 @@
+网桥设置（可能不用）：
+194.132.209.79:8240 A19704D853E0162651849A8BF86FFB5A7C360C51
+91.153.176.138:9001 95652E56008CF87559BDD24825555ECCFBB027A6
+73.78.217.63:443 06EF8B3C840171CB4EDE2C53E8EC9B1E2A130094
+213.242.19.74:443 CE05D6C9AB765FAACA83A79A7DA8DEC7C088EE21
+71.212.16.244:6112 A687715723ECC8527AD1A5408A8BCDEC6B356090
+37.218.246.33:21432 6AB749A7380A24A93E1630736539439150AACC38
+
+Linux完整配置方法（windows下也可以照搬）：
+解压lantern的安装包，运行lantern
+解压Tor的安装包，进入tor-browser_en-US，双击运行Tor Browser，配置中，网桥选meek-amazon或者meek-azure,不选择代理
+
+解压polipo,在解压到的polipo-1.1.1 文件夹，修改config.sample, 在里面增加语句
+
+socksParentProxy = "localhost:9150" # 9050 for windows and 9150 for linux
+socksProxyType = socks5
+diskCacheRoot = ""
+
+在解压到的polipo-1.1.1 文件夹的终端中[(Linux)输入make，编译polipo]，之后输入 ./polipo -c config.sample

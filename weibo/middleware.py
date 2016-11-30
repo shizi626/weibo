@@ -30,3 +30,4 @@ class ProxyMiddleware(object):
 
 		# using Tor
 		request.meta['proxy'] = settings.HTTP_PROXY
+		# print request.meta['proxy']

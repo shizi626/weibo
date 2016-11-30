@@ -30,7 +30,7 @@ DOWNLOAD_DELAY=3
 #CONCURRENT_REQUESTS_PER_IP=16
 
 # Disable cookies (enabled by default)
-#COOKIES_ENABLED=False
+# COOKIES_ENABLED=False
 
 # Disable Telnet Console (enabled by default)
 #TELNETCONSOLE_ENABLED=False
@@ -50,7 +50,8 @@ DOWNLOAD_DELAY=3
 # Enable or disable downloader middlewares
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
-    'weibo.middleware.UserAgentMiddleware': 401,
+    'weibo.middleware.UserAgentMiddleware': 400,
+    'weibo.middleware.ProxyMiddleware':401,
     'weibo.middleware.CookiesMiddleware': 402,
 }
 
@@ -87,13 +88,21 @@ ITEM_PIPELINES = {
 #HTTPCACHE_STORAGE='scrapy.extensions.httpcache.FilesystemCacheStorage'
 
 
+
 # mysql database settings
 DATABASE = {'drivername': 'mysql',
             'host': 'localhost',
             'port': '3306',
             'username': 'root',
+            'password': 'nicai@690!?',
             'database': 'sina',
             'query': {'charset': 'utf8'}}
 
 # log all duplicate requests
 DUPEFILTER_DEBUG = True
+
+# # ip proxy list file
+# PROXY_LIST = 'ipproxy.txt'
+
+# using Tor
+HTTP_PROXY ='http://127.0.0.1:8123'

@@ -79,6 +79,7 @@ class Spider(CrawlSpider):
 			userItems["gender"] = ''
 
 		if verified:
+			# 是否认证 0-认证 1-没有
 			userItems['verified'] = 0
 		else:
 			userItems['verified'] = 1

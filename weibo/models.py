@@ -2,6 +2,7 @@
 
 """
 using sqlalchemy to build ORM models
+please refer to items.py for comments about model entry
 """
 
 import datetime

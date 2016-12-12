@@ -22,7 +22,7 @@ class Spider(CrawlSpider):
 			ID = int(str(ID).split('\'')[1])
 			self.finishid.add(ID)  # 加入已爬队列
 
-			url_weibo = "http://weibo.cn/%s/profile?filter=0&page=1" % ID
+			url_weibo = "http://weibo.cn/%s/profile?filter=1&page=1" % ID
 			yield Request(url=url_weibo, meta={"ID": ID}, callback=self.parse2)  # 去爬微博
 
 	# 抓取思路：

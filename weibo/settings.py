@@ -50,8 +50,8 @@ DOWNLOAD_DELAY=3
 # Enable or disable downloader middlewares
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
-    'weibo.middleware.UserAgentMiddleware': 400,
-    'weibo.middleware.ProxyMiddleware':401,
+    'weibo.middleware.ProxyMiddleware':400,
+    'weibo.middleware.UserAgentMiddleware': 401,
     'weibo.middleware.CookiesMiddleware': 402,
 }
 
@@ -94,7 +94,7 @@ DATABASE = {'drivername': 'mysql',
             'host': 'localhost',
             'port': '3306',
             'username': 'root',
-            'password': 'nicai@690!?',
+
             'database': 'sina',
             'query': {'charset': 'utf8'}}
 
@@ -106,3 +106,8 @@ DUPEFILTER_DEBUG = True
 
 # using Tor
 HTTP_PROXY ='http://127.0.0.1:8123'
+
+# # using logging
+# LOG_FILE = '.\\crawlLog.txt'
+# LOG_LEVEL = 'WARNING'
+# LOG_STDOUT = True

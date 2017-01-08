@@ -16,6 +16,8 @@ from weibo.models import db_connect,create_table,\
 from scrapy.exceptions import DropItem
 from scrapy import signals
 
+import mysql
+
 @contextmanager
 def session_scope(Session):
 	"""Provide a transactional scope around a series of operations."""
@@ -67,6 +69,7 @@ class WeiboPipeline(object):
 				profileImageUrl = item['profileImageUrl']
 				)
 			with session_scope(self.Session) as session:
+				# add item to database through ORM model in models.py
 				session.add(u)
 		elif isinstance(item, commentItem):
 			c = Sina_comments(

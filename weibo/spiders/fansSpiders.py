@@ -82,7 +82,9 @@ class Spider(CrawlSpider):
 			c_user_id = "".join(re.findall('href="/u/(\d+)"', one.extract())) 
 			iditem = idItem()
 			iditem["id"] = c_user_id
-			print 'crawl from comment user id'
+			# print 'crawl from comment user id'
+			if c_user_id not in self.finishid:
+				self.scrawlid.add(c_user_id)
 			yield iditem
 
 		url_next = selector.xpath(
@@ -100,7 +102,9 @@ class Spider(CrawlSpider):
 			c_user_id = "".join(re.findall('href="/u/(\d+)"', one.extract())) 
 			iditem = idItem()
 			iditem["id"] = c_user_id
-			print 'crawl from repost user id'
+			# print 'crawl from repost user id'
+			if c_user_id not in self.finishid:
+				self.scrawlid.add(c_user_id)
 			yield iditem
 
 		url_next = selector.xpath(

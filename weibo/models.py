@@ -71,3 +71,9 @@ class Sina_id(Base):
 	__tablename__ = "sina_id"
 
 	id = Column(String(20), primary_key = True) #用户ID
+
+class Sina_relation(Base):
+	__tablename__ = "sina_relation"
+
+	id = Column(String(20), primary_key = True) #用户ID
+	relationList = Column(String(2500), default = "") #用户的粉丝数，最多200个

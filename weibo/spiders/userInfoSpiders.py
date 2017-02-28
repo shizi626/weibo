@@ -23,9 +23,9 @@ class Spider(CrawlSpider):
 			self.finishid.add(ID)  # 加入已爬队列
 
 			url_information0 = "http://weibo.cn/u/%s" % ID
-			yield Request(url=url_information0, meta={"ID": ID}, callback=self.parse0)  # 去爬个人信息
+			yield Request(url=url_information0, meta={"ID": ID}, callback=self.parseInfo0)  # 去爬个人信息
 
-	def parse0(self, response):
+	def parseInfo0(self, response):
 		""" 抓取个人信息0 """
 		userItems = userItem()
 		userItems["id"] = response.meta["ID"] # 用户ID
@@ -44,9 +44,9 @@ class Spider(CrawlSpider):
 
 		userItems["id"] = response.meta["ID"]
 		url_information1 = "http://weibo.cn/%s/info" % response.meta["ID"]
-		yield Request(url=url_information1, meta={"item": userItems}, callback=self.parse1)
+		yield Request(url=url_information1, meta={"item": userItems}, callback=self.parseInfo1)
 
-	def parse1(self, response):
+	def parseInfo1(self, response):
 		""" 抓取个人信息1 """
 		userItems = response.meta["item"]
 		selector = Selector(response)

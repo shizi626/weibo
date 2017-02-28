@@ -23,12 +23,12 @@ class Spider(CrawlSpider):
 			self.finishid.add(ID)  # 加入已爬队列
 
 			url_weibo = "http://weibo.cn/%s/profile?filter=1&page=1" % ID
-			yield Request(url=url_weibo, meta={"ID": ID}, callback=self.parse2)  # 去爬微博
+			yield Request(url=url_weibo, meta={"ID": ID}, callback=self.parseWeibo)  # 去爬微博
 
 	# 抓取思路：
 	#   首先抓取某个人的微博的数据，并将这个人微博的评论链接传给第二个爬虫
 	#   第二个爬虫接收评论列表的链接后，爬取评论内容，并递归爬取后面页数的评论
-	def parse2(self, response):
+	def parseWeibo(self, response):
 		""" 抓取微博数据 """
 
 		# print "start crawl weibo"
@@ -57,9 +57,9 @@ class Spider(CrawlSpider):
 			weiboitem["dzcount"] = int(dzcount)
 
 			yield weiboitem
-			# yield Request(url=commentLink, meta={'weiboId':weiboId}, callback=self.parse3)
+			# yield Request(url=commentLink, meta={'weiboId':weiboId}, callback=self.parseComment)
 
 		url_next = selector.xpath(u'body/div[@class="pa" and @id="pagelist"]/form/div/a[text()="\u4e0b\u9875"]/@href').extract()
 
 		if url_next:
-			yield Request(url=self.host + url_next[0], meta={"ID": response.meta["ID"]}, callback=self.parse2)	
+			yield Request(url=self.host + url_next[0], meta={"ID": response.meta["ID"]}, callback=self.parseWeibo)	

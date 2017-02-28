@@ -9,9 +9,9 @@ import csv
 from contextlib import contextmanager
 from sqlalchemy.orm import sessionmaker
 
-from weibo.items import userItem,weiboItem,commentItem,idItem
+from weibo.items import userItem,weiboItem,commentItem,idItem,relationItem
 from weibo.models import db_connect,create_table,\
-								Sina_users,Sina_weibos,Sina_comments,Sina_id
+								Sina_users,Sina_weibos,Sina_comments,Sina_id,Sina_relation
 
 from scrapy.exceptions import DropItem
 from scrapy import signals
@@ -71,7 +71,7 @@ class WeiboPipeline(object):
 			with session_scope(self.Session) as session:
 				# add item to database through ORM model in models.py
 				session.add(u)
-		elif isinstance(item, commentItem):
+		if isinstance(item, commentItem):
 			c = Sina_comments(
 				weiboId = item['weiboId'],
 				id = item['id'],
@@ -81,7 +81,7 @@ class WeiboPipeline(object):
 			)
 			with session_scope(self.Session) as session:
 				session.add(c)
-		elif isinstance(item, weiboItem):
+		if isinstance(item, weiboItem):
 			w = Sina_weibos(
 				id = item['id'],
 				uID = item['uID'],
@@ -93,7 +93,14 @@ class WeiboPipeline(object):
 				)
 			with session_scope(self.Session) as session:
 				session.add(w)
-		elif isinstance(item, idItem):
+		if isinstance(item, idItem):
 			i = Sina_id(id = item['id'])
 			with session_scope(self.Session) as session:
 				session.add(i)
+		if isinstance(item, relationItem):
+			i = Sina_relation(
+				id = item['id'],
+				relationList = item['relationList'])
+			with session_scope(self.Session) as session:
+				session.add(i)
+				

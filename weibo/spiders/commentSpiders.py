@@ -29,12 +29,12 @@ class Spider(CrawlSpider):
 			url_weibo = "http://weibo.cn/%s/profile?filter=1&page=1" % ID
 			url_follows = "http://weibo.cn/%s/follow" % ID
 			url_fans = "http://weibo.cn/%s/fans" % ID
-			# yield Request(url=url_information0, meta={"ID": ID}, callback=self.parse0)  # 去爬个人信息
-			yield Request(url=url_weibo, meta={"ID": ID}, callback=self.parse2)  # 通过微博跳转爬评论
-			# yield Request(url=url_follows, callback=self.parse4)  # 去爬关注人
-			# yield Request(url=url_fans, callback=self.parse4)  # 去爬粉丝
+			# yield Request(url=url_information0, meta={"ID": ID}, callback=self.parseInfo0)  # 去爬个人信息
+			yield Request(url=url_weibo, meta={"ID": ID}, callback=self.parseWeibo)  # 通过微博跳转爬评论
+			# yield Request(url=url_follows, callback=self.parseFans_Follows)  # 去爬关注人
+			# yield Request(url=url_fans, callback=self.parseFans_Follows)  # 去爬粉丝
 
-	# def parse0(self, response):
+	# def parseInfo0(self, response):
 	# 	""" 抓取个人信息0 """
 	# 	userItems = userItem()
 	# 	userItems["id"] = response.meta["ID"] # 用户ID
@@ -53,9 +53,9 @@ class Spider(CrawlSpider):
 
 	# 	userItems["id"] = response.meta["ID"]
 	# 	url_information1 = "http://weibo.cn/%s/info" % response.meta["ID"]
-	# 	yield Request(url=url_information1, meta={"item": userItems}, callback=self.parse1)
+	# 	yield Request(url=url_information1, meta={"item": userItems}, callback=self.parseInfo1)
 
-	# def parse1(self, response):
+	# def parseInfo1(self, response):
 	# 	""" 抓取个人信息1 """
 	# 	userItems = response.meta["item"]
 	# 	selector = Selector(response)
@@ -104,44 +104,44 @@ class Spider(CrawlSpider):
 	# 抓取思路：
 	#   首先抓取某个人的微博的数据，并将这个人微博的评论链接传给第二个爬虫
 	#   第二个爬虫接收评论列表的链接后，爬取评论内容，并递归爬取后面页数的评论
-	#	必须使用parse2中的某些项目(commentLink和weiboId)
-	#	才能在之后启动parse3，因此选择保留完整的parse2
-	def parse2(self, response):
+	#	必须使用parseWeibo中的某些项目(commentLink和weiboId)
+	#	才能在之后启动parseComment，因此选择保留完整的parseWeibo
+	def parseWeibo(self, response):
 		""" 抓取微博数据 """
 
 		selector = Selector(response)
 		weibo = selector.xpath('body/div[@class="c" and @id]')
 		for one in weibo:
-			weiboitem = weiboItem()
+			# weiboitem = weiboItem()
 			weiboId = one.xpath('@id').extract_first().replace("M_","")  # 微博ID
-			weiboText = "".join(one.xpath('div/span[@class="ctt"]/text()').extract())  # 微博内容
-			zfreason = "".join(one.xpath('div[2]/text()').extract())  # 转发微博的原因
-			zfcount = "".join(re.findall(u'\u8f6c\u53d1\[(\d+)\]', one.extract()))  # 转发数
-			commentCount = "".join(re.findall(u'\u8bc4\u8bba\[(\d+)\]', one.extract()))  # 评论数
+			# weiboText = "".join(one.xpath('div/span[@class="ctt"]/text()').extract())  # 微博内容
+			# zfreason = "".join(one.xpath('div[2]/text()').extract())  # 转发微博的原因
+			# zfcount = "".join(re.findall(u'\u8f6c\u53d1\[(\d+)\]', one.extract()))  # 转发数
+			# commentCount = "".join(re.findall(u'\u8bc4\u8bba\[(\d+)\]', one.extract()))  # 评论数
 			commentLink = "".join(one.xpath('div/a[@class = "cc"]/@href').extract()) #评论链接
-			dzcount = "".join(re.findall(u'\u8d5e\[(\d+)\]', one.extract()))  # 点赞数
+			# dzcount = "".join(re.findall(u'\u8d5e\[(\d+)\]', one.extract()))  # 点赞数
 
-			weiboitem["uID"] = response.meta["ID"]
-			weiboitem["id"] = weiboId
+			# weiboitem["uID"] = response.meta["ID"]
+			# weiboitem["id"] = weiboId
 
 			# (转发的)微博内容，去掉最后的"[位置]"和空格符
-			tempweibo = weiboText.strip(u"[\u4f4d\u7f6e]").replace(u'\xa0','')+zfreason.replace(u'\xa0','')  
-			weiboitem["weiboText"] = process_emoji(tempweibo)
+			# tempweibo = weiboText.strip(u"[\u4f4d\u7f6e]").replace(u'\xa0','')+zfreason.replace(u'\xa0','')  
+			# weiboitem["weiboText"] = process_emoji(tempweibo)
 
-			weiboitem["zfcount"] = int(zfcount)
-			weiboitem["commentCount"] = int(commentCount)
-			weiboitem["commentLink"] = commentLink
-			weiboitem["dzcount"] = int(dzcount)
+			# weiboitem["zfcount"] = int(zfcount)
+			# weiboitem["commentCount"] = int(commentCount)
+			# weiboitem["commentLink"] = commentLink
+			# weiboitem["dzcount"] = int(dzcount)
 
-			yield weiboitem
-			yield Request(url=commentLink, meta={'weiboId':weiboId}, callback=self.parse3)
+			# yield weiboitem
+			yield Request(url=commentLink, meta={'weiboId':weiboId}, callback=self.parseComment)
 
 		url_next = selector.xpath(u'body/div[@class="pa" and @id="pagelist"]/form/div/a[text()="\u4e0b\u9875"]/@href').extract()
 
 		if url_next:
-			yield Request(url=self.host + url_next[0], meta={"ID": response.meta["ID"]}, callback=self.parse2)
+			yield Request(url=self.host + url_next[0], meta={"ID": response.meta["ID"]}, callback=self.parseWeibo)
 
-	def parse3(self, response):
+	def parseComment(self, response):
 		""" 抓取某条微博评论数据 """
 
 		# print "start crawl comment"
@@ -174,9 +174,9 @@ class Spider(CrawlSpider):
 			u'body/div[@class="pa" and @id="pagelist"]/form/div/a[text()="\u4e0b\u9875"]/@href').extract()
 
 		if url_next:
-			yield Request(url=self.host + url_next[0], meta={'weiboId':weiboId}, callback=self.parse3)    
+			yield Request(url=self.host + url_next[0], meta={'weiboId':weiboId}, callback=self.parseComment)    
 
-	# def parse4(self, response):
+	# def parseFans_Follows(self, response):
 	# 	""" 抓取关注或粉丝 """
 	# 	selector = Selector(response)
 	# 	text2 = selector.xpath(u'body//table/tr/td/a[text()="\u5173\u6ce8\u4ed6" or text()="\u5173\u6ce8\u5979"]/@href').extract()
@@ -194,4 +194,4 @@ class Spider(CrawlSpider):
 	# 		u'body//div[@class="pa" and @id="pagelist"]/form/div/a[text()="\u4e0b\u9875"]/@href').extract()
 
 	# 	if url_next:
-	# 		yield Request(url=self.host + url_next[0], callback=self.parse4)
+	# 		yield Request(url=self.host + url_next[0], callback=self.parseFans_Follows)

@@ -8,7 +8,7 @@ from scrapy.selector import Selector
 from scrapy.http import Request
 
 from weibo.items import userItem, weiboItem, commentItem, idItem
-from weibo.util import process_ctime, getSeed, process_emoji
+from weibo.util import getSeed
 
 class Spider(CrawlSpider):
 	name = "fans"
@@ -27,11 +27,11 @@ class Spider(CrawlSpider):
 			url_fans = "http://weibo.cn/%s/fans?page=1" % (ID)
 			url_weibo = "http://weibo.cn/%s/profile?filter=1&page=1" % ID
 
-			yield Request(url=url_follows, callback=self.parse4)  # 去爬关注人
-			yield Request(url=url_fans, callback=self.parse4)  # 去爬粉丝
-			yield Request(url=url_weibo, meta={"ID": ID}, callback=self.parse5) # 通过微博的转发和评论爬取粉丝
+			yield Request(url=url_follows, callback=self.parseFans_Follows)  # 去爬关注人
+			yield Request(url=url_fans, callback=self.parseFans_Follows)  # 去爬粉丝
+			yield Request(url=url_weibo, meta={"ID": ID}, callback=self.parseRepost_Comment) # 通过微博的转发和评论爬取粉丝
 
-	def parse4(self, response):
+	def parseFans_Follows(self, response):
 		""" 抓取关注或粉丝 """
 		selector = Selector(response)
 		text2 = selector.xpath(u'body//table/tr/td/a[text()="\u5173\u6ce8\u4ed6" or text()="\u5173\u6ce8\u5979"]/@href').extract()
@@ -49,9 +49,9 @@ class Spider(CrawlSpider):
 			u'body//div[@class="pa" and @id="pagelist"]/form/div/a[text()="\u4e0b\u9875"]/@href').extract()
 
 		if url_next:
-			yield Request(url=self.host + url_next[0], callback=self.parse4)
+			yield Request(url=self.host + url_next[0], callback=self.parseFans_Follows)
 
-	def parse5(self, response):
+	def parseRepost_Comment(self, response):
 		"""通过微博的转发和评论链接跳转爬取粉丝"""
 		selector = Selector(response)
 		weibo = selector.xpath('body/div[@class="c" and @id]')
@@ -64,16 +64,16 @@ class Spider(CrawlSpider):
 			uid = response.meta["ID"]
 			# 小于一定量的评论数和转发数不去爬取
 			if (int(zfcount)>10):
-				yield Request(url=commentLink, callback=self.parse6)
+				yield Request(url=commentLink, callback=self.parseCommentID)
 			if(int(commentCount)>10):
-				yield Request(url='http://weibo.cn/repost/%s?uid=%s&rl=0' %(weiboId, uid), callback=self.parse7)
+				yield Request(url='http://weibo.cn/repost/%s?uid=%s&rl=0' %(weiboId, uid), callback=self.parseRepostID)
 		
 		url_next = selector.xpath(u'body/div[@class="pa" and @id="pagelist"]/form/div/a[text()="\u4e0b\u9875"]/@href').extract()
 
 		if url_next:
-			yield Request(url=self.host + url_next[0], meta={"ID": response.meta["ID"]}, callback=self.parse5)
+			yield Request(url=self.host + url_next[0], meta={"ID": response.meta["ID"]}, callback=self.parseRepost_Comment)
 
-	def parse6(self, response):
+	def parseCommentID(self, response):
 		"""爬取评论的用户id"""
 		selector = Selector(response)
 		comment = selector.xpath('body/div[@class="c" and @id]')
@@ -91,9 +91,9 @@ class Spider(CrawlSpider):
 			u'body/div[@class="pa" and @id="pagelist"]/form/div/a[text()="\u4e0b\u9875"]/@href').extract()
 
 		if url_next:
-			yield Request(url=self.host + url_next[0], callback=self.parse6)    
+			yield Request(url=self.host + url_next[0], callback=self.parseCommentID)    
 
-	def parse7(self, response):
+	def parseRepostID(self, response):
 		"""爬取转发的用户id"""
 		selector = Selector(response)
 		repost = selector.xpath('//span[@class="cc"]/..')
@@ -111,4 +111,4 @@ class Spider(CrawlSpider):
 			u'body/div[@class="pa" and @id="pagelist"]/form/div/a[text()="\u4e0b\u9875"]/@href').extract()
 
 		if url_next:
-			yield Request(url=self.host + url_next[0], callback=self.parse7)   			
+			yield Request(url=self.host + url_next[0], callback=self.parseRepostID)   			
